@@ -376,7 +376,64 @@ client.on('interactionCreate', async interaction => {
        PONER ADVERTENCIA
     ========================= */
 
-    if (interaction.commandName === 'poner_advertencia') {
+    js id="p6ajy0"
+if (interaction.commandName === 'poner_advertencia') {
+
+    const miembro = interaction.options.getUser('miembro');
+    const motivo = interaction.options.getString('motivo');
+
+    db.prepare(`
+    INSERT INTO advertencias (
+        guild_id,
+        miembro,
+        motivo,
+        admin,
+        fecha
+    )
+    VALUES (?, ?, ?, ?, ?)
+    `).run(
+        guildId,
+        miembro.tag,
+        motivo,
+        interaction.user.tag,
+        new Date().toLocaleString()
+    );
+
+    // Buscar canal advertencias
+    const canalAdvertencias = interaction.guild.channels.cache.find(
+        c => c.name === 'advertencias'
+    );
+
+    // Enviar log automático
+    if (canalAdvertencias) {
+
+        canalAdvertencias.send({
+            embeds: [
+                new EmbedBuilder()
+                    .setTitle('⚠️ Nueva Advertencia')
+                    .addFields(
+                        {
+                            name: 'Miembro',
+                            value: miembro.tag
+                        },
+                        {
+                            name: 'Motivo',
+                            value: motivo
+                        },
+                        {
+                            name: 'Administrador',
+                            value: interaction.user.tag
+                        }
+                    )
+            ]
+        });
+
+    }
+
+    return interaction.reply('⚠️ Advertencia registrada.');
+
+}
+
 
         const miembro = interaction.options.getUser('miembro');
         const motivo = interaction.options.getString('motivo');
