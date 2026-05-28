@@ -40,7 +40,7 @@ const client = new Client({
    SQLITE
 ========================= */
 
-const db = new Database('./database.sqlite');
+const db = require('better-sqlite3')('data/database.sqlite');
 
 db.prepare(`
 CREATE TABLE IF NOT EXISTS detenciones (
