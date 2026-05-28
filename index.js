@@ -103,18 +103,42 @@ const commands = [
         .setDescription('Ver historial')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-    new SlashCommandBuilder()
-        .setName('poner_advertencia')
-        .setDescription('Poner advertencia')
-        .addUserOption(option =>
-            option.setName('miembro')
-                .setDescription('Miembro')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('motivo')
-                .setDescription('Motivo')
-                .setRequired(true))
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+   new SlashCommandBuilder()
+    .setName('historial_advertencias')
+    .setDescription('Ver advertencias de un miembro')
+    .addUserOption(option =>
+        option.setName('miembro')
+            .setDescription('Miembro')
+            .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+new SlashCommandBuilder()
+    .setName('registro_personal')
+    .setDescription('Ver detenciones hechas por un miembro')
+    .addUserOption(option =>
+        option.setName('miembro')
+            .setDescription('Miembro')
+            .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+new SlashCommandBuilder()
+    .setName('historial_registro_personal')
+    .setDescription('Ranking de detenciones')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+new SlashCommandBuilder()
+    .setName('tiempo_total_capturados')
+    .setDescription('Tiempo total acumulado')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+new SlashCommandBuilder()
+    .setName('tiempo_captura_enemigo')
+    .setDescription('Tiempo total de captura de un enemigo')
+    .addStringOption(option =>
+        option.setName('enemigo')
+            .setDescription('Nombre enemigo')
+            .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 ].map(command => command.toJSON());
 
@@ -352,7 +376,159 @@ client.on('interactionCreate', async interaction => {
     }
 
 });
+/* =========================
+   HISTORIAL ADVERTENCIAS
+========================= */
 
+if (interaction.commandName === 'historial_advertencias') {
+
+    const miembro = interaction.options.getUser('miembro');
+
+    const rows = db.prepare(`
+    SELECT * FROM advertencias
+    WHERE guild_id = ?
+    AND miembro = ?
+    ORDER BY id DESC
+    `).all(guildId, miembro.tag);
+
+    if (!rows.length) {
+        return interaction.reply('❌ No tiene advertencias.');
+    }
+
+    const texto = rows.map(r =>
+        `• ${r.motivo} | ${r.fecha}`
+    ).join('\n');
+
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle(`⚠️ Advertencias de ${miembro.tag}`)
+                .setDescription(texto)
+        ]
+    });
+}
+
+/* =========================
+   REGISTRO PERSONAL
+========================= */
+
+if (interaction.commandName === 'registro_personal') {
+
+    const miembro = interaction.options.getUser('miembro');
+
+    const total = db.prepare(`
+    SELECT COUNT(*) as cantidad
+    FROM detenciones
+    WHERE guild_id = ?
+    AND usuario = ?
+    `).get(guildId, miembro.tag);
+
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle('👮 Registro Personal')
+                .addFields(
+                    {
+                        name: 'Miembro',
+                        value: miembro.tag
+                    },
+                    {
+                        name: 'Detenciones',
+                        value: `${total.cantidad}`
+                    }
+                )
+        ]
+    });
+}
+
+/* =========================
+   HISTORIAL REGISTRO
+========================= */
+
+if (interaction.commandName === 'historial_registro_personal') {
+
+    const rows = db.prepare(`
+    SELECT usuario,
+    COUNT(*) as total
+    FROM detenciones
+    WHERE guild_id = ?
+    GROUP BY usuario
+    ORDER BY total DESC
+    LIMIT 10
+    `).all(guildId);
+
+    if (!rows.length) {
+        return interaction.reply('❌ No hay datos.');
+    }
+
+    const texto = rows.map((r, i) =>
+        `#${i + 1} ${r.usuario} — ${r.total}`
+    ).join('\n');
+
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle('🏆 Ranking')
+                .setDescription(texto)
+        ]
+    });
+}
+
+/* =========================
+   TIEMPO TOTAL
+========================= */
+
+if (interaction.commandName === 'tiempo_total_capturados') {
+
+    const total = db.prepare(`
+    SELECT SUM(tiempo_minutos) as total
+    FROM detenciones
+    WHERE guild_id = ?
+    `).get(guildId);
+
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle('⏱️ Tiempo Total')
+                .setDescription(
+                    `${total.total || 0} minutos`
+                )
+        ]
+    });
+}
+
+/* =========================
+   TIEMPO ENEMIGO
+========================= */
+
+if (interaction.commandName === 'tiempo_captura_enemigo') {
+
+    const enemigo = interaction.options.getString('enemigo');
+
+    const total = db.prepare(`
+    SELECT SUM(tiempo_minutos) as total
+    FROM detenciones
+    WHERE guild_id = ?
+    AND enemigo = ?
+    `).get(guildId, enemigo);
+
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle('🎯 Tiempo Enemigo')
+                .addFields(
+                    {
+                        name: 'Enemigo',
+                        value: enemigo
+                    },
+                    {
+                        name: 'Tiempo',
+                        value: `${total.total || 0} minutos`
+                    }
+                )
+        ]
+    });
+}
 /* =========================
    LOGIN
 ========================= */
