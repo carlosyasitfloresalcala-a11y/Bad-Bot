@@ -421,7 +421,7 @@ if (interaction.commandName === 'registro_personal') {
     FROM detenciones
     WHERE guild_id = ?
     AND usuario = ?
-    `).get(guildId, miembro.tag);
+    `).get(interaction.guildId, miembro.id);
 
     return interaction.reply({
         embeds: [
@@ -430,7 +430,7 @@ if (interaction.commandName === 'registro_personal') {
                 .addFields(
                     {
                         name: 'Miembro',
-                        value: miembro.tag
+                        value: `${miembro.username}`
                     },
                     {
                         name: 'Detenciones',
