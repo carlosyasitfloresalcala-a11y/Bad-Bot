@@ -194,6 +194,33 @@ function canalCorrecto(interaction) {
 client.on('interactionCreate', async (interaction) => {
 
     if (!interaction.isChatInputCommand()) return;
+if (interaction.commandName === 'historial_advertencias') {
+
+    const miembro = interaction.options.getUser('miembro');
+
+    const rows = db.prepare(`
+    SELECT * FROM advertencias
+    WHERE guild_id = ?
+    AND miembro = ?
+    ORDER BY id DESC
+    `).all(interaction.guildId, miembro.id);
+
+    if (!rows.length) {
+        return interaction.reply('❌ No tiene advertencias.');
+    }
+
+    const texto = rows.map(r =>
+        `• ${r.motivo} | ${r.fecha}`
+    ).join('\n');
+
+    return interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle(`⚠️ Advertencias de ${miembro.tag}`)
+                .setDescription(texto)
+        ]
+    });
+}
 
     if (!esAdmin(interaction)) {
 
@@ -380,33 +407,6 @@ client.on('interactionCreate', async (interaction) => {
    HISTORIAL ADVERTENCIAS
 ========================= */
 
-if (interaction.commandName === 'historial_advertencias') {
-
-    const miembro = interaction.options.getUser('miembro');
-
-    const rows = db.prepare(`
-    SELECT * FROM advertencias
-    WHERE guild_id = ?
-    AND miembro = ?
-    ORDER BY id DESC
-    `).all(guildId, miembro.tag);
-
-    if (!rows.length) {
-        return interaction.reply('❌ No tiene advertencias.');
-    }
-
-    const texto = rows.map(r =>
-        `• ${r.motivo} | ${r.fecha}`
-    ).join('\n');
-
-    return interaction.reply({
-        embeds: [
-            new EmbedBuilder()
-                .setTitle(`⚠️ Advertencias de ${miembro.tag}`)
-                .setDescription(texto)
-        ]
-    });
-}
 
 /* =========================
    REGISTRO PERSONAL
