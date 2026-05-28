@@ -376,7 +376,6 @@ client.on('interactionCreate', async interaction => {
        PONER ADVERTENCIA
     ========================= */
 
-    js id="p6ajy0"
 if (interaction.commandName === 'poner_advertencia') {
 
     const miembro = interaction.options.getUser('miembro');
